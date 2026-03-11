@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solve It Grid</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: #f0ece4;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    max-width: 720px;
+  }
+
+  .axis-label {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #555;
+    text-align: center;
+    padding: 6px 0;
+  }
+
+  .middle-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+  }
+
+  .axis-label-side {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #555;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    padding: 0 8px;
+    min-width: 36px;
+    text-align: center;
+  }
+
+  .axis-label-side.right {
+    transform: none;
+    writing-mode: vertical-rl;
+  }
+
+  .grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 0;
+    width: 100%;
+    position: relative;
+    background: #ccc;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+
+  /* Axis lines */
+  .grid-container::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0; right: 0;
+    height: 3px;
+    background: rgba(255,255,255,0.6);
+    z-index: 10;
+    transform: translateY(-50%);
+  }
+  .grid-container::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0; bottom: 0;
+    width: 3px;
+    background: rgba(255,255,255,0.6);
+    z-index: 10;
+    transform: translateX(-50%);
+  }
+
+  .quadrant {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 260px;
+    position: relative;
+  }
+
+  .q-red    { background: #e05555; }
+  .q-green  { background: #5a9e4b; }
+  .q-yellow { background: #e8a730; }
+  .q-blue   { background: #4aadcf; }
+
+  .q-label {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 2px;
+  }
+
+  .todo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .todo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 8px;
+    padding: 7px 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .todo-item:hover {
+    background: rgba(255,255,255,0.28);
+  }
+
+  .todo-item.done {
+    background: rgba(0,0,0,0.12);
+  }
+
+  .todo-item.done .todo-text {
+    text-decoration: line-through;
+    opacity: 0.55;
+  }
+
+  .checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid rgba(255,255,255,0.7);
+    background: transparent;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .todo-item.done .checkbox {
+    background: rgba(255,255,255,0.5);
+    border-color: transparent;
+  }
+
+  .checkbox-check {
+    display: none;
+    width: 10px;
+    height: 10px;
+  }
+
+  .todo-item.done .checkbox-check {
+    display: block;
+  }
+
+  .todo-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.4;
+    flex: 1;
+    outline: none;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    cursor: text;
+  }
+
+  .todo-text:focus {
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 0 3px;
+  }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.4);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  .delete-btn:hover { color: rgba(255,255,255,0.9); }
+
+  .add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.15);
+    border: 2px dashed rgba(255,255,255,0.4);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: rgba(255,255,255,0.75);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s, border-color 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .add-btn:hover {
+    background: rgba(255,255,255,0.25);
+    border-color: rgba(255,255,255,0.7);
+    color: #fff;
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 540px) {
+    body {
+      padding: 8px;
+      overflow-x: hidden;
+    }
+    .axis-label {
+      font-size: 11px;
+    }
+    .axis-label-side {
+      font-size: 9px;
+      padding: 0 3px;
+      min-width: 20px;
+    }
+    .quadrant {
+      padding: 10px;
+      min-height: 160px;
+      gap: 8px;
+    }
+    .q-label {
+      font-size: 9px;
+    }
+    .todo-item {
+      gap: 5px;
+      padding: 5px 7px;
+    }
+    .checkbox {
+      width: 16px;
+      height: 16px;
+    }
+    .todo-text {
+      font-size: 12px;
+    }
+    .add-btn {
+      font-size: 10px;
+      padding: 5px 8px;
+    }
+  }
+
+  /* Arrow indicators on axis */
+  .arrow-top, .arrow-bottom, .arrow-left, .arrow-right {
+    width: 0; height: 0;
+    position: relative;
+  }
+
+  .axis-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .arrow {
+    display: inline-block;
+    border: solid #888;
+    border-width: 0 2px 2px 0;
+    padding: 4px;
+  }
+  .arrow.up { transform: rotate(-135deg); }
+  .arrow.down { transform: rotate(45deg); }
+  .arrow.left-arr { transform: rotate(135deg); }
+  .arrow.right-arr { transform: rotate(-45deg); }
+
+  #status-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    color: #fff;
+    background: #333;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 9999;
+  }
+  #status-toast.show { opacity: 1; transform: translateY(0); }
+  #status-toast.ok  { background: #3a9e5f; }
+  #status-toast.err { background: #c0392b; }
+</style>
+</head>
+<body>
+<div id="status-toast"></div>
+
+<div class="wrapper">
+
+  <div class="axis-row">
+    <i class="arrow up"></i>
+    <div class="axis-label">High Emotional Stimulation</div>
+    <i class="arrow up" style="opacity:0"></i>
+  </div>
+
+  <div class="middle-row">
+    <div class="axis-label-side">Not Fun</div>
+
+    <div class="grid-container" id="grid">
+
+      <!-- RED: High Emotional Stimulation + Not Fun -->
+      <div class="quadrant q-red" data-quadrant="red">
+        <div class="q-label">🔴 Red — Not Fun &amp; High Emotion</div>
+        <div class="todo-list" id="list-red"></div>
+        <button class="add-btn" onclick="addItem('red')">+ Add task</button>
+      </div>
+
+      <!-- GREEN: High Emotional Stimulation + Fun -->
+      <div class="quadrant q-green" data-quadrant="green">
+        <div class="q-label">🟢 Green — Energizing &amp; Fun</div>
+        <div class="todo-list" id="list-green"></div>
+        <button class="add-btn" onclick="addItem('green')">+ Add task</button>
+      </div>
+
+      <!-- YELLOW: Low Emotional Stimulation + Not Fun -->
+      <div class="quadrant q-yellow" data-quadrant="yellow">
+        <div class="q-label">🟡 Yellow — Boring | less draining than you think</div>
+        <div class="todo-list" id="list-yellow"></div>
+        <button class="add-btn" onclick="addItem('yellow')">+ Add task</button>
+      </div>
+
+      <!-- BLUE: Low Emotional Stimulation + Fun -->
+      <div class="quadrant q-blue" data-quadrant="blue">
+        <div class="q-label">🔵 Blue — Low Energy, Fun</div>
+        <div class="todo-list" id="list-blue"></div>
+        <button class="add-btn" onclick="addItem('blue')">+ Add task</button>
+      </div>
+
+    </div>
+
+    <div class="axis-label-side right">Fun</div>
+  </div>
+
+  <div class="axis-row">
+    <i class="arrow down"></i>
+    <div class="axis-label">Low Emotional Stimulation</div>
+    <i class="arrow down" style="opacity:0"></i>
+  </div>
+
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://mcbobdzbijlulaptcbiv.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_8nDxCKIlulnfeW9nRAK8WQ_1XoiStpz';
+  const BASE_HEADERS = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+
+  let tasks = [];
+  let toastTimer = null;
+
+  function showStatus(msg, isError = false) {
+    const el = document.getElementById('status-toast');
+    el.textContent = msg;
+    el.className = 'show ' + (isError ? 'err' : 'ok');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = ''; }, 2200);
+  }
+
+  async function sbFetch(path, options = {}) {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+      headers: BASE_HEADERS,
+      ...options
+    });
+    return res;
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function render(q) {
+    const list = document.getElementById('list-' + q);
+    list.innerHTML = '';
+    tasks.filter(t => t.quadrant === q).forEach(task => {
+      const el = document.createElement('div');
+      el.className = 'todo-item' + (task.done ? ' done' : '');
+      el.innerHTML = `
+        <div class="checkbox" onclick="toggle(${task.id})">
+          <svg class="checkbox-check" viewBox="0 0 10 10" fill="none">
+            <polyline points="1.5,5 4,7.5 8.5,2" stroke="rgba(0,0,0,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="todo-text" contenteditable="true" spellcheck="false"
+          onblur="updateText(${task.id}, this.innerText)"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+        >${escapeHtml(task.text)}</div>
+        <button class="delete-btn" onclick="deleteItem(${task.id}, '${q}')">×</button>
+      `;
+      list.appendChild(el);
+    });
+  }
+
+  async function loadAll() {
+    const res = await sbFetch('tasks?select=*&order=id.asc');
+    if (!res.ok) { showStatus('Failed to load tasks', true); return; }
+    tasks = await res.json();
+    ['red','green','yellow','blue'].forEach(q => render(q));
+  }
+
+  async function addItem(q) {
+    const res = await sbFetch('tasks', {
+      method: 'POST',
+      body: JSON.stringify({ quadrant: q, text: 'New task', done: false })
+    });
+    if (!res.ok) { showStatus('Failed to add task', true); return; }
+    const [task] = await res.json();
+    tasks.push(task);
+    render(q);
+    showStatus('Task added');
+    const list = document.getElementById('list-' + q);
+    const last = list.lastElementChild;
+    if (last) {
+      const editable = last.querySelector('.todo-text');
+      if (editable) {
+        editable.focus();
+        const range = document.createRange();
+        range.selectNodeContents(editable);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+  }
+
+  async function toggle(id) {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    const res = await sbFetch('tasks?id=eq.' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({ done: !task.done })
+    });
+    if (!res.ok) { showStatus('Failed to update', true); return; }
+    const [updated] = await res.json();
+    Object.assign(task, updated);
+    render(task.quadrant);
+    showStatus(task.done ? 'Marked done' : 'Marked undone');
+  }
+
+  async function updateText(id, text) {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    const trimmed = text.trim() || task.text;
+    if (trimmed === task.text) return;
+    const res = await sbFetch('tasks?id=eq.' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({ text: trimmed })
+    });
+    if (!res.ok) { showStatus('Failed to save text', true); return; }
+    const [updated] = await res.json();
+    Object.assign(task, updated);
+    showStatus('Saved');
+  }
+
+  async function deleteItem(id, q) {
+    const res = await sbFetch('tasks?id=eq.' + id, { method: 'DELETE' });
+    if (!res.ok) { showStatus('Failed to delete', true); return; }
+    tasks = tasks.filter(t => t.id !== id);
+    render(q);
+    showStatus('Deleted');
+  }
+
+  loadAll();
+</script>
+</body>
+</html>
